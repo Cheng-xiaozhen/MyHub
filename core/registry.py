@@ -7,9 +7,10 @@ import difflib
 from rich.console import Console
 from rich.table import Table
 
-from .core.base_dataset import BaseDataset
-from .core.base_model import BaseModel
-from .core.base_transform import BaseTransform
+from .base_dataset import BaseDataset
+from .base_model import BaseModel
+from .base_transform import BaseTransform
+from .base_evaluate import BaseEvaluator
 
 
 class Registry:    
@@ -205,6 +206,7 @@ EVALUATORS = Registry(name='EVALUATORS')
 MODELS.register_module(module=BaseModel, name='BaseModel')
 DATASETS.register_module(module=BaseDataset, name='BaseDataset')
 TRANSFORMS.register_module(module=BaseTransform, name='BaseTransform')
+EVALUATORS.register_module(module=BaseEvaluator, name='BaseEvaluator')
 
 
 # 添加便捷的装饰器函数
@@ -245,37 +247,42 @@ def register_evaluator(name: Optional[Union[str, List[str]]] = None, force: bool
 def build_from_registry(registry, config_args):
     """"
     从注册器中构建实例
+    Args:
+        registry (Registry): 要使用的注册器实例
+        config_args (dict): 包含类名和初始化参数的字典
+    Returns:
+        Any: 构建的实例
     """
-    # 从字典中获取 class 名称
-    name = config_args["name"]  # 直接从字典中访问
+    # 获取类名
+    name = config_args["name"]
     if name in registry.module_dict.keys():
         cls = registry.get(name)
     else:
         cls = None
 
     # ========== 懒加载逻辑 ==========
+    # if cls is None:
+    #     from lazy_maps import get_all_lazy_maps
+    #     ALL_LAZY_MODEL_MAP, ALL_LAZY_POSTFUNC_MAP = get_all_lazy_maps()
+    #     lazy_map = ALL_LAZY_MODEL_MAP if registry is MODELS else ALL_LAZY_POSTFUNC_MAP
+    #     module_path = lazy_map.get(name, None)
+
+    #     if module_path is None:
+    #         raise ValueError(f"Class or function '{name}' not found in registry or lazy map.")
+
+    #     print(f"[lazy import] Loading '{name}' from '{module_path}'")
+    #     importlib.import_module(module_path)  # 动态加载
+
+    #     # ========== Deepfake 包装逻辑 ==========
+    #     flag = True
+    #     if registry is MODELS:
+    #         from .lazy_maps import _wrap_deepfake_if_needed
+    #         cls, flag = _wrap_deepfake_if_needed(cls, name)
+
+    #     if not flag: cls = registry.get(name)
+
     if cls is None:
-        from ForensicHub.lazy_maps import get_all_lazy_maps
-        ALL_LAZY_MODEL_MAP, ALL_LAZY_POSTFUNC_MAP = get_all_lazy_maps()
-        lazy_map = ALL_LAZY_MODEL_MAP if registry is MODELS else ALL_LAZY_POSTFUNC_MAP
-        module_path = lazy_map.get(name, None)
-
-        if module_path is None:
-            raise ValueError(f"Class or function '{name}' not found in registry or lazy map.")
-
-        print(f"[lazy import] Loading '{name}' from '{module_path}'")
-        importlib.import_module(module_path)  # 动态加载
-
-        # ========== Deepfake 包装逻辑 ==========
-        flag = True
-        if registry is MODELS:
-            from ForensicHub.lazy_maps import _wrap_deepfake_if_needed
-            cls, flag = _wrap_deepfake_if_needed(cls, name)
-
-        if not flag: cls = registry.get(name)
-
-    if cls is None:
-        raise ImportError(f"'{name}' was not registered after importing '{module_path}'")
+        raise ImportError(f"'{name}' 没有注册")
 
     # 获取 config 字典中的参数
     if "init_config" in config_args:
@@ -291,24 +298,23 @@ def build_from_registry(registry, config_args):
             elif v.lower() == "false":
                 config[k] = False
 
-    print(f"[build_from_registry] Creating model '{name}' with args: {config}")
+    print(f"[build_from_registry] 创建模型 '{name}' 参数: {config}")
     return cls(**config)
 
 
 def is_seq_of(seq: Any,
               expected_type: Union[Type, tuple],
-              seq_type: Type = None) -> bool:
-    """Check whether it is a sequence of some type.
-
+              seq_type: Optional[Type] = None) -> bool:
+    """
+    检查是否是某种类型的序列
     Args:
-        seq (Sequence): The sequence to be checked.
-        expected_type (type or tuple): Expected type of sequence items.
-        seq_type (type, optional): Expected sequence type. Defaults to None.
-
+        seq (Any): 要检查的序列
+        expected_type (type or tuple): 期望的序列item类型
+        seq_type (type, optional): 期望的序列类型。默认值为None
     Returns:
-        bool: Return True if ``seq`` is valid else False.
-
-    Examples:
+        bool: 如果序列有效则返回True，否则返回False
+    
+    示例:
         >>> from mmengine.utils import is_seq_of
         >>> seq = ['a', 'b', 'c']
         >>> is_seq_of(seq, str)
