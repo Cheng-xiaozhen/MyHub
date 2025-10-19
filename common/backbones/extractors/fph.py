@@ -27,6 +27,9 @@ def calculate_output_image_size(input_image_size, stride):
     return [image_height, image_width]
 
 class MBConvBlock(nn.Module):
+    """
+    MBConv块, 包含深度可分离卷积, 可选的SE模块, 可选的残差连接
+    """
     def __init__(self, block_args, global_params, image_size=25):
         super().__init__()
         self._block_args = block_args
@@ -87,6 +90,9 @@ class MBConvBlock(nn.Module):
         self._swish = MemoryEfficientSwish() if memory_efficient else Swish()
 
 class AddCoords(nn.Module):
+    """
+    添加坐标通道的模块
+    """
     def __init__(self, with_r=True):
         super().__init__()
         self.with_r = with_r
@@ -104,7 +110,9 @@ class AddCoords(nn.Module):
         return ret
 
 class FPH(nn.Module):
-
+    """
+    FPH特征提取器
+    """
     def __init__(self):
         super(FPH, self).__init__()
         self.obembed = nn.Embedding(21,21).from_pretrained(torch.eye(21))

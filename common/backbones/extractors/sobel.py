@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import inspect
 class SobelFilter(nn.Module):
+    """
+    Sobel边缘检测算子
+    """
     def __init__(self,in_chan=3, out_chan=1,norm = None ):
         super(SobelFilter, self).__init__()
         if norm is not None and (not inspect.isclass(norm) or not issubclass(norm, nn.Module)):

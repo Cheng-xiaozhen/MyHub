@@ -3,6 +3,9 @@ import torch.nn as nn
 import torch.fft
 import math
 class DCTExtractor(nn.Module):
+    """
+    DCT高频特征提取器
+    """
     def __init__(self, alpha=0.1):
         super(DCTExtractor, self).__init__()
         if alpha <= 0 or alpha >= 1:
@@ -54,6 +57,9 @@ class DCTExtractor(nn.Module):
         return xh
 
 class FFTExtractor(nn.Module):
+    """
+    FFT高频特征提取器
+    """
     def __init__(self, alpha=0.1):
         super(FFTExtractor, self).__init__()
         if alpha <= 0 or alpha >= 1:

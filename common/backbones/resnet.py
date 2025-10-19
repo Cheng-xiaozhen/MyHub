@@ -3,12 +3,12 @@ import timm
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .extractors.fph import FPH
 from ...core.base_model import BaseModel
 from ...core.registry import register_model
 from .extractors.high_frequency_feature_extraction import FFTExtractor,DCTExtractor
 from .extractors.sobel import SobelFilter
 from .extractors.bayar_conv import BayerConv
+from .extractors.fph import FPH
 
 
 class Resnet(BaseModel):
@@ -17,7 +17,7 @@ class Resnet(BaseModel):
                  output_type='label',  
                  backbone='resnet101',  
                  pretrained=True,  
-                 image_size=256,  # to set mask size when output_type is mask
+                 image_size=256, 
                  num_channels=3):
         """
         Resnet backbone model
@@ -39,9 +39,9 @@ class Resnet(BaseModel):
 
         if output_type == 'label': # 用于分类的输出头
             self.head = nn.Sequential(
-                nn.AdaptiveAvgPool2d(1),
-                nn.Flatten(),
-                nn.Linear(out_channels, 1)
+                nn.AdaptiveAvgPool2d(1), # 全局平均池化
+                nn.Flatten(), # 展平为1D向量
+                nn.Linear(out_channels, 1) # 全连接层, 输出分类结果
             )
         elif output_type == 'mask': # 用于生成掩码的输出头
             self.head = nn.Sequential(
@@ -50,23 +50,29 @@ class Resnet(BaseModel):
                 nn.Conv2d(out_channels // 2, out_channels // 4, kernel_size=3, padding=1),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(out_channels // 4, 1, kernel_size=1),
-                nn.Upsample(size=(image_size, image_size), mode='bilinear', align_corners=False)
+                nn.Upsample(size=(image_size, image_size), mode='bilinear', align_corners=False) # 上采样到指定大小
             )
         else:
             raise ValueError(f"不支持的output_type: {output_type}")
 
-        original_first_layer = list(self.model.children())[0]
-        if input_head is not None: # 如果提供了额外的输入头, 修改ResNet的第一层卷积以适应额外的输入通道
+        original_first_layer = list(self.model.children())[0] # 获取原始ResNet的第一层
+        if input_head is not None: 
+            # 如果提供了额外的输入头, 修改ResNet的第一层卷积以适应额外的输入通道
             self.input_head = input_head
-            new_first_layer = nn.Conv2d(num_channels + 3, original_first_layer.out_channels,
+            
+            new_first_layer = nn.Conv2d(
+                                        num_channels + 3, # 额外输入通道数 + 3通道原始图像
+                                        original_first_layer.out_channels, # 保持输出通道数不变
                                         kernel_size=original_first_layer.kernel_size,
                                         stride=original_first_layer.stride,
-                                        padding=original_first_layer.padding, bias=False)
-            new_first_layer.weight.data[:, :3, :, :] = original_first_layer.weight.data.clone()[:, :3, :, :]
+                                        padding=original_first_layer.padding,
+                                        bias=False
+                                        )
+            new_first_layer.weight.data[:, :3, :, :] = original_first_layer.weight.data.clone()[:, :3, :, :]# 保留原始3通道的权重
             if num_channels > 0:
                 new_first_layer.weight.data[:, 3:, :, :] = torch.nn.init.kaiming_normal_(
-                    new_first_layer.weight[:, 3:, :, :])
-            self.model.conv1 = new_first_layer
+                    new_first_layer.weight[:, 3:, :, :]) # 初始化额外通道的权重
+            self.model.conv1 = new_first_layer # 替换ResNet的第一层卷积
         else:
             self.input_head = None
 
@@ -74,8 +80,8 @@ class Resnet(BaseModel):
         # 1.如果有额外的输入头, 先通过该头处理输入图像
         if self.input_head is not None: 
             # 2.将处理后的特征与原始图像拼接
-            feature = self.input_head(image)
-            x = torch.cat([image, feature], dim=1)
+            feature = self.input_head(image) # image: [B, 3, H, W] -> feature: [B, num_channels, H, W]
+            x = torch.cat([image, feature], dim=1) # 拼接后: [B, 3 + num_channels, H, W]
         else:
             x = image
         
@@ -84,10 +90,11 @@ class Resnet(BaseModel):
         
         # 4. 根据输出类型计算损失和预测结果
         if self.output_type == 'label':
-            if len(out.shape) == 2:
+            if len(out.shape) == 2: 
+                # 假如out的形状是[B, 1], 则去掉维度1,变为[B]
                 out = out.squeeze(dim=1)
-            loss = F.binary_cross_entropy_with_logits(out, kwargs['label'].float())
-            pred = out.sigmoid()
+            loss = F.binary_cross_entropy_with_logits(out, kwargs['label'].float()) # 计算二分类交叉熵损失, binary_cross_entropy_with_logits = sigmoid + BCELoss
+            pred = out.sigmoid() # 预测结果通过sigmoid激活函数映射到[0, 1]
         else:
             loss = F.binary_cross_entropy_with_logits(out, kwargs['mask'].float())
             pred = out.sigmoid()
@@ -215,3 +222,7 @@ class QtResnet101(Resnet):
             f"pred_{self.output_type}": pred,
             "visual_loss": {"combined_loss": loss}
         }
+
+if __name__ == '__main__':
+    model = Resnet101()
+    print(model)

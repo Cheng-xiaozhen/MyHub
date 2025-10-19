@@ -41,15 +41,6 @@ train_dataset:
             - /mnt/data3/public_datasets/AIGC/GenImage/stable_diffusion_v_1_5_train.json
             - /mnt/data3/public_datasets/AIGC/GenImage/VQDM_train.json
             - /mnt/data3/public_datasets/AIGC/GenImage/wukong_train.json
-      - name: DocumentCrossDataset
-        pic_nums: 12641
-        init_config:
-          image_size: 256
-          path:
-            - /mnt/data1/public_datasets/Doc/cutted_datasets_alls/OSTF_train
-            - /mnt/data1/public_datasets/Doc/cutted_datasets_alls/RealTextManipulation_train
-            - /mnt/data1/public_datasets/Doc/cutted_datasets_alls/T-SROIE_train
-            - /mnt/data1/public_datasets/Doc/cutted_datasets_alls/Tampered-IC13_train
       - name: DeepfakeCrossDataset
         pic_nums: 12641
         init_config:
