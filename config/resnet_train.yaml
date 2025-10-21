@@ -23,57 +23,57 @@ train_dataset:
   dataset_name: CrossDataset
   init_config:
     dataset_config:
-      - name: IMDLCrossDataset
+      - name: LabelDataset
         pic_nums: 12641
         init_config:
           image_size: 256
-          path: /mnt/data0/public_datasets/IML/CASIAv2_with_label.json
-      - name: AIGCCrossDataset
+          path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/CASIAv2.json
+      - name: LabelDataset
         pic_nums: 12641
         init_config:
           image_size: 256
           path:
-            - /mnt/data3/public_datasets/AIGC/GenImage/ADM_train.json
-            - /mnt/data3/public_datasets/AIGC/GenImage/BigGAN_train.json
-            - /mnt/data3/public_datasets/AIGC/GenImage/glide_train.json
-            - /mnt/data3/public_datasets/AIGC/GenImage/Midjourney_train.json
-            - /mnt/data3/public_datasets/AIGC/GenImage/stable_diffusion_v_1_4_train.json
-            - /mnt/data3/public_datasets/AIGC/GenImage/stable_diffusion_v_1_5_train.json
-            - /mnt/data3/public_datasets/AIGC/GenImage/VQDM_train.json
-            - /mnt/data3/public_datasets/AIGC/GenImage/wukong_train.json
-      - name: DeepfakeCrossDataset
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_ADM.json
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_BigGAN.json
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_glide.json
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_Midjourney.json
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_stable_diffusion_v_1_4.json
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_stable_diffusion_v_1_5.json
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_VQDM.json
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_wukong.json
+      - name: LabelDataset
         pic_nums: 12641
         init_config:
           image_size: 256
-          path: /mnt/data1/public_datasets/Deepfake
-          config_file: /mnt/data1/public_datasets/Deepfake/FaceForensics++.json
+          path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/FaceForensics++.json
+          #config_file: /mnt/data1/public_datasets/Deepfake/FaceForensics++.json
 
 #  Test dataset (one or many)
 test_dataset:
-  - name: JsonDataset
-    dataset_name: IMD2020
+  - name: LabelDataset
+    dataset_name: Coverage
     init_config:
       image_size: 256
-      path: /mnt/data0/public_datasets/IML/IMD_20_1024_full.json
+      path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/test_data/coverage.json
       # Dataset specific setting
       is_resizing: true
       is_padding: false
-  - name: AIGCLabelDataset
-    dataset_name: DiffusionForensics_test
+  - name: LabelDataset
+    dataset_name: GenImage_ADM_test
     init_config:
       image_size: 256
-      path: /mnt/data3/public_datasets/AIGC/DiffusionForensics/images/test.json
-  - name: DeepfakeCrossDataset
-    dataset_name: FF-DF_test
+      path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/test_data/GenImage_ADM.json
+  - name: LabelDataset
+    dataset_name: FF++_test
     init_config:
       image_size: 256
-      path: /mnt/data1/public_datasets/Deepfake
-      config_file: /mnt/data1/public_datasets/Deepfake/FF-DF.json
-      split_mode: test
+      path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/test_data/FaceForensics++.json
+      #config_file: /mnt/data1/public_datasets/Deepfake/FF-DF.json
+      #split_mode: test
 
 # Transform
 transform:
-  name: AIGCTransform
+  name: CrossTransform
 
 # Evaluators
 evaluator:

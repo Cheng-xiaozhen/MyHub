@@ -42,3 +42,12 @@
 #         return WrappedModel, flag
 
 #     return cls, flag
+
+def get_all_lazy_map():
+    lazy_map = {
+        "CrossDataset":"MyHub.common.datasets.CrossDataset",
+        "CrossTransform":"MyHub.common.transforms.CrossTransform",
+        "Resnet":"MyHub.common.backbones.resnet",
+        "Resnet101":"MyHub.common.backbones.resnet"
+    }
+    return lazy_map

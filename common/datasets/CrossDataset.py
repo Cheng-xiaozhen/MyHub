@@ -1,114 +1,97 @@
-import json
-import os
 import random
-import torch
-import numpy as np
-from PIL import Image
 from ...core.base_dataset import BaseDataset
-from ...core.registry import register_dataset
+from ...core.registry import register_dataset, build_from_registry, DATASETS
 
-@register_dataset('CrossDataset')
+
+@register_dataset("CrossDataset")
 class CrossDataset(BaseDataset):
-    def __init__(self,path,image_size,**kwargs):
+    """
+    跨数据集包装器
+    """
+    def __init__(self, dataset_config=[], **kwargs):
         """
-        跨数据集加载器, 用于在多个数据集上进行训练和评估
         Args:
-            path (str): 数据集路径
-            image_size (int): 图像大小
-            **kwargs: 每个数据集特有的其他参数
+            dataset_config (list): 数据集配置列表，包含多个数据集的配置信息
+            **kwargs (dict): 其他初始化参数，会传递给每个子数据集
         """
-        self.image_size = image_size
-        super(CrossDataset, self).__init__(path=path, **kwargs)
+        super().__init__(path='', **kwargs)
+        self.datasets = []
+        self.pic_nums = []
+        self.dataset_names = []
+        self.return_mask = True
+        for config in dataset_config:
+            config['init_config']['common_transform'] = self.common_transform
+            config['init_config']['post_transform'] = self.post_transform
+            config['init_config']['post_funcs'] = self.post_funcs
+            dataset = build_from_registry(DATASETS, config)
+            self.dataset_names.append(config['name'])
+            self.datasets.append(dataset)
+            self.pic_nums.append(config['pic_nums'])
+
+        # 获取所有数据集样本中 key 的最小公共集合
+        self.common_keys = self.get_common_keys(self.datasets)
+        print(self.common_keys)
+
+    def __len__(self):
+        """
+        样本数量总和
+        """
+        total_samples = sum(self.pic_nums)  
+        return total_samples
 
     def _init_dataset_path(self) -> None:
-        """
-        重写基类的方法以初始化跨数据集路径
-        从json文件中读取所有数据集的图像路径和标签
-        """
-        if isinstance(self.path, str):
-            dataset_paths = [self.path]
-        elif isinstance(self.path, list):
-            dataset_paths = self.path
-        else:
-            raise TypeError(f"path参数必须是字符串或字符串列表,但收到{type(self.path)}")
+        pass
 
-        self.samples = []
-        for json_path in dataset_paths:
-            if not os.path.exists(json_path):
-                raise FileNotFoundError(f"数据集路径不存在: {json_path}")
-            with open(json_path, 'r') as f:
-                data = json.load(f)
-                self.samples.extend(data) # 期待数据格式为[ {"path":"image1.jpg","label":0} ...]
-        self.entry_path = ','.join(dataset_paths)
-    
-    def _len__(self) -> int:
+    def get_common_keys(self, datasets):
         """
-        返回数据集中的样本数量
-        """
-        return len(self.samples)
-
-    def __getitem__(self,idx):
-        """
-        获取数据集中的一个样本
+        获取所有数据集样本中 key 的最小公共集合
         Args:
-            idx (int): 样本索引
-        Returns:
-            dict: 包含图像和标签的字典
-        """
-        sample = self.samples[idx]
-        image_path = sample.get('path', None)
-        label = sample.get('label', None)
-        try:
-            image = Image.open(image_path).convert('RGB')
-            image = image.resize((self.image_size, self.image_size))
-            image = np.array(image)
-        except Exception as e:
-            print(f"[❌]无法加载图像 {image_path}: {e}")
-            # 跳过当前样本, 递归获取下一个样本
-            return self.__getitem__((idx+1)%len(self))
-        
-        # 如果有transform, 则应用transform
-        if self.common_transform:
-            out = self.common_transform(image=image)
-            image = out['image']
-        if self.post_transform:
-            out = self.post_transform(image=image)
-            image = out['image']
-        
-        # 构建输出字典
-        output = {
-            "image": image,
-            "label": torch.tensor(label,dtype=torch.float)
-        }
+            datasets (list): 数据集列表，每个元素是一个数据集实例
 
-        # 应用任何后处理函数
-        if self.post_funcs:
-            self.post_funcs(output)
-        
-        return output
+        Returns:
+            set: 所有数据集样本中 key 的最小公共集合
+        """
+        try:
+            common_keys = set(datasets[0][0].keys()) # 初始化为第一个数据集的第一个样本的 key 集合
+            for dataset in datasets[1:]:
+                sample = dataset[0]
+                common_keys &= set(sample.keys())
+            return common_keys
+        except Exception as e:
+            return set()  # 如果出错，返回空集合
+
+    def __getitem__(self, index):
+        """
+        获取数据集中的样本
+        Args:
+            index (int): 样本索引
+
+        Returns:
+            dict: 包含样本数据的字典，键为公共键，值为样本值
+        """
+        try:
+            cumulative_samples = 0
+            for i, pic_num in enumerate(self.pic_nums):
+                cumulative_samples += pic_num # 累积的 pic_num 可以帮助我们确定从哪个数据集抽取
+                if index < cumulative_samples:  # 如果 index 在这个数据集的范围内
+                    selected_dataset = self.datasets[i] # 选择对应的数据集
+                    # 在当前数据集中随机选择一个样本
+                    selected_item = random.randint(0, len(selected_dataset) - 1)
+                    origin_out_dict = selected_dataset[selected_item]
+                    origin_out_dict = {key: origin_out_dict[key] for key in self.common_keys if key in origin_out_dict}
+                    origin_out_dict['label'] = origin_out_dict['label'].long()
+                    return origin_out_dict
+        except Exception as e:
+            raise IndexError("索引超出数据集范围")
 
     def __str__(self):
         """
-        返回数据集的字符串表示, 包含样本数量和标签分布
+        返回数据集的字符串表示
         """
-        label_counts = {0: 0, 1: 0}
-        for sample in self.samples:
-            label = sample["label"]
-            if label in label_counts:
-                label_counts[label] += 1
-            else:
-                label_counts[label] = 1  # 如果出现了非0/1的标签，也记录
-
-        return (f"CrossDataset from {self.entry_path}\n"
-                f"Total samples: {len(self.samples)}\n"
-                f"Label 0 samples (real): {label_counts.get(0, 0)}\n"
-                f"Label 1 samples (fake): {label_counts.get(1, 0)}")
-    
-    
-    
-
-        
-
-
-        
-
+        info = f"<=== CrossDataset with {len(self.datasets)} datasets: {self.dataset_names} ===>\n"
+        for i, ds in enumerate(self.datasets):
+            info += f"\n[Dataset {i} - {self.dataset_names[i]}]\n"
+            info += str(ds) + "\n"
+        info += f"\nTotal samples per epoch: {self.__len__():,}\n"
+        info += f"<================================================>\n"
+        return info

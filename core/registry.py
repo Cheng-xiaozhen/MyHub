@@ -261,28 +261,19 @@ def build_from_registry(registry, config_args):
         cls = None
 
     # ========== 懒加载逻辑 ==========
-    # if cls is None:
-    #     from lazy_maps import get_all_lazy_maps
-    #     ALL_LAZY_MODEL_MAP, ALL_LAZY_POSTFUNC_MAP = get_all_lazy_maps()
-    #     lazy_map = ALL_LAZY_MODEL_MAP if registry is MODELS else ALL_LAZY_POSTFUNC_MAP
-    #     module_path = lazy_map.get(name, None)
-
-    #     if module_path is None:
-    #         raise ValueError(f"Class or function '{name}' not found in registry or lazy map.")
-
-    #     print(f"[lazy import] Loading '{name}' from '{module_path}'")
-    #     importlib.import_module(module_path)  # 动态加载
-
-    #     # ========== Deepfake 包装逻辑 ==========
-    #     flag = True
-    #     if registry is MODELS:
-    #         from .lazy_maps import _wrap_deepfake_if_needed
-    #         cls, flag = _wrap_deepfake_if_needed(cls, name)
-
-    #     if not flag: cls = registry.get(name)
-
     if cls is None:
-        raise ImportError(f"'{name}' 没有注册")
+        from .lazy_maps import get_all_lazy_map
+        lazy_map = get_all_lazy_map()
+        module_path = lazy_map.get(name,None)
+
+        if module_path is None:
+            raise ValueError(f"{name}没有找到源文件")
+        print(f"[Lazy import] 从{module_path} 加载 {name}")
+        importlib.import_module(module_path) # 动态加载
+        cls = registry.get(name)
+    
+    if cls is None:
+        raise ImportError(f"无法从{module_path} 加载 {name}")
 
     # 获取 config 字典中的参数
     if "init_config" in config_args:
@@ -333,3 +324,6 @@ def is_seq_of(seq: Any,
         if not isinstance(item, expected_type):
             return False
     return True
+
+if __name__ == "__main__":
+    pass

@@ -35,7 +35,7 @@ class BaseDataset(Dataset, ABC):
         self.img_loader = img_loader
         self.post_funcs = post_funcs
 
-        # Initialize dataset paths
+        # 加载数据集
         self._init_dataset_path()
 
     @abstractmethod
