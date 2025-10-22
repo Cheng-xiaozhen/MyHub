@@ -45,7 +45,6 @@ class LabelDataset(BaseDataset):
         """
         返回数据集中的样本数量
         """
-        print(len(self.samples))
         return len(self.samples)
 
     def __getitem__(self,idx):

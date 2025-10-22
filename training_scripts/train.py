@@ -22,7 +22,6 @@ def get_args_parser():
     args = parser.parse_args()
     config = load_yaml_config(args.config)
 
-    # model_args, train_dataset_args, transform_args are dict type, test_dataset_args is dict list.
     args, model_args, train_dataset_args, test_dataset_args, transform_args, evaluator_args = split_config(config)
     add_attr(args, output_dir=args.log_dir)
     add_attr(args, if_not_amp=not args.use_amp)
@@ -30,21 +29,22 @@ def get_args_parser():
 
 
 def main(args, model_args, train_dataset_args, test_dataset_args, transform_args, evaluator_args):
-    # init parameters for distributed training
+    # 初始化分布式训练环境
     misc.init_distributed_mode(args)
     import torch.multiprocessing
-    torch.multiprocessing.set_sharing_strategy('file_system')
-    print('job dir: {}'.format(os.path.dirname(os.path.realpath(__file__))))
+    torch.multiprocessing.set_sharing_strategy('file_system') # 使用file_system策略, 缓解dataloader多num_workers加载数据时的共享内存不足问题
+    print('当前脚本所在目录: {}'.format(os.path.dirname(os.path.realpath(__file__))))
     print("=====args:=====")
     print("{}".format(args).replace(', ', ',\n'))
     device = torch.device(args.device)
 
-    # fix the seed for reproducibility
+    # 初始化随机种子
     seed = args.seed + misc.get_rank()
     misc.seed_torch(seed)
     torch.manual_seed(seed)
     np.random.seed(seed)
 
+    # 初始化transform, 用于数据预处理和增强
     transform = build_from_registry(TRANSFORMS, transform_args)
     train_transform = transform.get_train_transform()
     test_transform = transform.get_test_transform()
@@ -54,7 +54,7 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
     print("Test transform: ", test_transform)
     print("Post transform: ", post_transform)
 
-    # get post function (if have)
+    # 初始化post function, 用于后处理模型输出
     post_function_name = f"{model_args['name']}_post_func".lower()
     if model_args.get('post_func_name') is not None:
         post_function_name = f"{model_args['post_func_name']}_post_func".lower()
@@ -65,6 +65,8 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
         post_function = None
     print(post_function)
 
+    # 初始化数据集
+    # 多个数据集混合在一起组成训练集
     train_dataset_args["init_config"].update({
         "post_funcs": post_function,
         "common_transform": train_transform,
@@ -72,6 +74,7 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
     })
     train_dataset = build_from_registry(DATASETS, train_dataset_args)
 
+    # 测试集是单独分开的多个数据集
     test_dataset_list = {}
     for test_args in test_dataset_args:
         test_args["init_config"].update({
@@ -87,13 +90,20 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
     print(f"Test dataset: {[args['dataset_name'] for args in test_dataset_args]}.")
     print([len(dataset) for dataset in test_dataset_list.values()])
 
+    # 初始化数据加载器和采样器
     test_sampler = {}
     if args.distributed:
-        num_tasks = misc.get_world_size()
-        global_rank = misc.get_rank()
+        num_tasks = misc.get_world_size() # 总进程数
+        global_rank = misc.get_rank() # 当前进程编号
+
+        # 初始化训练集采样器, 用于分布式训练
         sampler_train = torch.utils.data.DistributedSampler(
-            train_dataset, num_replicas=num_tasks, rank=global_rank, shuffle=True
+            train_dataset, 
+            num_replicas=num_tasks, # 告诉DistributedSampler要将数据集划分为多少份
+            rank=global_rank,# 根据rank参数, 选择当前进程负责处理哪一份数据
+            shuffle=True
         )
+        # 初始化测试集采样器, 测试集没有混合,所以是多个独立的采样器
         for test_dataset_name, dataset_test in test_dataset_list.items():
             sampler_test = torch.utils.data.DistributedSampler(
                 dataset_test,
@@ -271,7 +281,19 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
 
 
 if __name__ == '__main__':
-    args, model_args, train_dataset_args, test_dataset_args, transform_args, evaluator_args = get_args_parser()
+    # args, model_args, train_dataset_args, test_dataset_args, transform_args, evaluator_args = get_args_parser()
+    parser = argparse.ArgumentParser('ForensicHub benchmark training launch!', add_help=True)
+    parser.add_argument("--config", type=str, help="Path to YAML config file", required=True)
+
+    args = parser.parse_args()
+    config = load_yaml_config(args.config)
+
+    args, model_args, train_dataset_args, test_dataset_args, transform_args, evaluator_args = split_config(config)
+
+    add_attr(args, output_dir=args.log_dir)
+    add_attr(args, if_not_amp=not args.use_amp)
+
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+
     main(args, model_args, train_dataset_args, test_dataset_args, transform_args, evaluator_args)

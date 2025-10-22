@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from torch.utils.data import Subset, DataLoader
 
 from ..utils import misc
-from ...core.base_evaluate import BaseEvaluator as AbstractEvaluator
+from ...core.base_evaluation import BaseEvaluator as BaseEvaluator
 
 
 def denormalize(image, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
@@ -23,7 +23,7 @@ def denormalize(image, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
 
 def test_one_loader(model: torch.nn.Module,
                     data_loader: Iterable, 
-                    evaluator_list: List[AbstractEvaluator],
+                    evaluator_list: List[BaseEvaluator],
                     device: torch.device, 
                     metric_logger=None,
                     print_freq=20,
@@ -112,7 +112,7 @@ def test_one_loader(model: torch.nn.Module,
 
 def test_one_epoch(model: torch.nn.Module,
                     data_loader: Iterable, 
-                    evaluator_list: List[AbstractEvaluator],
+                    evaluator_list: List[BaseEvaluator],
                     device: torch.device, 
                     epoch: int,
                     name='', 

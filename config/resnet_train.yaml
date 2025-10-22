@@ -28,24 +28,24 @@ train_dataset:
         init_config:
           image_size: 256
           path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/CASIAv2.json
-      - name: LabelDataset
-        pic_nums: 12641
-        init_config:
-          image_size: 256
-          path:
-            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_ADM.json
-            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_BigGAN.json
-            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_glide.json
-            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_Midjourney.json
-            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_stable_diffusion_v_1_4.json
-            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_stable_diffusion_v_1_5.json
-            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_VQDM.json
-            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_wukong.json
-      - name: LabelDataset
-        pic_nums: 12641
-        init_config:
-          image_size: 256
-          path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/FaceForensics++.json
+      # - name: LabelDataset
+      #   pic_nums: 12641
+      #   init_config:
+      #     image_size: 256
+      #     path:
+      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_ADM.json
+      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_BigGAN.json
+      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_glide.json
+      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_Midjourney.json
+      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_stable_diffusion_v_1_4.json
+      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_stable_diffusion_v_1_5.json
+      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_VQDM.json
+      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_wukong.json
+      # - name: LabelDataset
+      #   pic_nums: 12641
+      #   init_config:
+      #     image_size: 256
+      #     path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/FaceForensics++.json
           #config_file: /mnt/data1/public_datasets/Deepfake/FaceForensics++.json
 
 #  Test dataset (one or many)
@@ -58,16 +58,16 @@ test_dataset:
       # Dataset specific setting
       is_resizing: true
       is_padding: false
-  - name: LabelDataset
-    dataset_name: GenImage_ADM_test
-    init_config:
-      image_size: 256
-      path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/test_data/GenImage_ADM.json
-  - name: LabelDataset
-    dataset_name: FF++_test
-    init_config:
-      image_size: 256
-      path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/test_data/FaceForensics++.json
+  # - name: LabelDataset
+  #   dataset_name: GenImage_ADM_test
+  #   init_config:
+  #     image_size: 256
+  #     path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/test_data/GenImage_ADM.json
+  # - name: LabelDataset
+  #   dataset_name: FF++_test
+  #   init_config:
+  #     image_size: 256
+  #     path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/test_data/FaceForensics++.json
       #config_file: /mnt/data1/public_datasets/Deepfake/FF-DF.json
       #split_mode: test
 
@@ -77,12 +77,12 @@ transform:
 
 # Evaluators
 evaluator:
-  - name: ImageF1
+  - name: ImageAccuracy
     init_config:
       threshold: 0.5
 
 # Training related
-batch_size: 512
+batch_size: 2
 test_batch_size: 128
 epochs: 20
 accum_iter: 1
@@ -97,7 +97,7 @@ log_per_epoch_count: 20
 
 # DDP & AMP settings
 find_unused_parameters: true
-use_amp: true
+use_amp: false
 
 # Optimizer parameters
 weight_decay: 0.05

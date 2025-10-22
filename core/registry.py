@@ -10,7 +10,7 @@ from rich.table import Table
 from .base_dataset import BaseDataset
 from .base_model import BaseModel
 from .base_transform import BaseTransform
-from .base_evaluate import BaseEvaluator
+from .base_evaluation import BaseEvaluator
 
 
 class Registry:    
