@@ -96,7 +96,7 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
         num_tasks = misc.get_world_size() # 总进程数
         global_rank = misc.get_rank() # 当前进程编号
 
-        # 初始化训练集采样器, 用于分布式训练
+        # 初始化采样器, 用于分布式训练时划分数据集, 每个进程只处理自己负责的那一份数据
         sampler_train = torch.utils.data.DistributedSampler(
             train_dataset, 
             num_replicas=num_tasks, # 告诉DistributedSampler要将数据集划分为多少份
@@ -124,10 +124,11 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
 
     if global_rank == 0 and args.log_dir is not None:
         os.makedirs(args.log_dir, exist_ok=True)
-        log_writer = SummaryWriter(log_dir=args.log_dir)
+        log_writer = SummaryWriter(log_dir=args.log_dir)  # 初始化TensorBoard日志记录器
     else:
         log_writer = None
 
+    # 初始化数据加载器
     data_loader_train = torch.utils.data.DataLoader(
         train_dataset, sampler=sampler_train,
         batch_size=args.batch_size,
@@ -136,6 +137,7 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
         drop_last=True,
     )
 
+    # 初始化测试集数据加载器
     test_dataloaders = {}
     for test_dataset_name in test_sampler.keys():
         test_dataloader = torch.utils.data.DataLoader(
@@ -147,74 +149,96 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
         )
         test_dataloaders[test_dataset_name] = test_dataloader
 
-    # Init model with registry
+    # 初始化模型, 从注册表中构建模型实例
     model = build_from_registry(MODELS, model_args)
 
-    # Init evaluators
+    # 初始化evaluator, 用于评估模型性能
     evaluator_list = []
     for eva_args in evaluator_args:
         evaluator_list.append(build_from_registry(EVALUATORS, eva_args))
     print(f"Evaluators: {evaluator_list}")
 
+    # 将 普通BatchNorm 转换为 同步BatchNorm 
+    # BatchNorm层会计算当前batch的均值和方差, 在分布式训练中, 每个GPU上的BatchNorm层只看到自己那一小部分数据, 可能导致统计量不准确
+    # SyncBatchNorm会在所有GPU之间同步这些统计量, 使得每个GPU上的BatchNorm层都使用整个batch的数据来计算均值和方差
+    # 类似梯度的同步
     if args.distributed:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
-    model.to(device)
+    model = model.to(device) # 将模型移动到指定的设备(如GPU)上
 
     model_without_ddp = model
     print("Model = %s" % str(model_without_ddp))
-
+    
+    # 计算实际有效批量大小, 有效批次大小 = 每个GPU的批次大小 * 梯度累积步数 * GPU数量
+    # 用于调整学习率等超参数,
+    # 理论基础是学习率的线性缩放规则 (Linear Scaling Rule), 当batch size增加时, 学习率也应按比例线性增加
     eff_batch_size = args.batch_size * args.accum_iter * misc.get_world_size()
 
-    if args.lr is None:  # only base_lr is specified
+    # 如果没有指定学习率, 则根据有效批量大小自动计算学习率
+    if args.lr is None:  
         args.lr = args.blr * eff_batch_size / 256
 
     print("base lr: %.2e" % (args.lr * 256 / eff_batch_size))
     print("actual lr: %.2e" % args.lr)
-
     print("accumulate grad iterations: %d" % args.accum_iter)
     print("effective batch size: %d" % eff_batch_size)
 
-    #print(f"master port: {os.environ['MASTER_PORT']}")
-
+    
+    # 包装分布式数据并行模型
     if args.distributed:
         print(f"master port: {os.environ['MASTER_PORT']}")
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu],
                                                           find_unused_parameters=args.find_unused_parameters)
-        model_without_ddp = model.module
+        model_without_ddp = model.module # 从DDP模型中提取原始模型, 以便后续保存和加载模型权重等, 同时和非分布式变量保持一致
 
-    # TODO You can set optimizer settings here
+    # 初始化优化器, 这里使用AdamW优化器
+    # TODO 后续将优化器设置放入yaml中
     args.opt = 'AdamW'
     args.betas = (0.9, 0.999)
     args.momentum = 0.9
     optimizer = optim_factory.create_optimizer(args, model_without_ddp)
     print(optimizer)
-    loss_scaler = misc.NativeScalerWithGradNormCount()
+    loss_scaler = misc.NativeScalerWithGradNormCount() # 初始化损失缩放器, 用于自动混合精度(AMP)训练, 防止梯度下溢
 
+    # 从检查点恢复，如果提供了arg.resume
     misc.load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
 
+    # 开始训练和测试循环
     print(f"Start training for {args.epochs} epochs")
     start_time = time.time()
     best_evaluate_metric_value = 0
     for epoch in range(args.start_epoch, args.epochs):
+        
+        optimizer.zero_grad()
+
         if args.distributed:
-            data_loader_train.sampler.set_epoch(epoch)
+            data_loader_train.sampler.set_epoch(epoch) # 以epoch作为随机种子，打乱数据顺序
+        
         # train for one epoch
         train_stats = train_one_epoch(
-            model, data_loader_train,
-            optimizer, device, epoch, loss_scaler,
+            model, 
+            data_loader_train,
+            optimizer, 
+            device, 
+            epoch, 
+            loss_scaler,
             log_writer=log_writer,
             log_per_epoch_count=args.log_per_epoch_count,
             args=args
         )
 
-        # # saving checkpoint
+        # saving checkpoint
         if args.output_dir and (epoch % 25 == 0 or epoch + 1 == args.epochs):
             misc.save_model(
-                args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                loss_scaler=loss_scaler, epoch=epoch)
-
-        optimizer.zero_grad()
+                args=args, 
+                model=model, 
+                model_without_ddp=model_without_ddp,
+                optimizer=optimizer,
+                loss_scaler=loss_scaler, 
+                epoch=epoch
+                )
+        
         # test for one epoch
         if epoch % args.test_period == 0 or epoch + 1 == args.epochs:
             values = {}  # dict of dict (dataset_name: {metric_name: metric_value})
