@@ -9,11 +9,12 @@ import torch.nn.functional as F
 from torch.utils.data import Subset, DataLoader
 
 from ..utils import misc
-from ...core.base_evaluation import BaseEvaluator as BaseEvaluator
+from ...core.base_evaluation import BaseEvaluator
 
 
 def denormalize(image, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
-    """denormalize image with mean and std
+    """
+    将归一化后的图像恢复到原始范围
     """
     image = image.clone().detach().cpu()
     image = image * torch.tensor(std).view(3, 1, 1)
@@ -31,16 +32,17 @@ def test_one_loader(model: torch.nn.Module,
                     if_remain=False,
                     args=None
                    ):
+
     data_dict, output_dict = None, None # See https://github.com/scu-zjz/IMDLBenCo/blob/main/tests/test_tail_dataset.py for why this is needed
 
     # 具体data_dict的格式参考IMDLBench.datasets.abstract_dataset的108行 113行~117行
     for data_iter_step, data_dict in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
         
-        # move to device
+        # 将数据移动到指定设备
         for key in data_dict.keys():
             if isinstance(data_dict[key], torch.Tensor):
                 data_dict[key] = data_dict[key].to(device)
-        # Forwarding on model
+
         output_dict = model(**data_dict)
 
         #---- Training evaluation ----
@@ -57,7 +59,7 @@ def test_one_loader(model: torch.nn.Module,
 
         if BATCHSIZE != args.test_batch_size:
             print("=" * 20)
-            print(f"A batch that is not fully loaded was detected at the end of the dataset. The actual batch size for this batch is {BATCHSIZE}: The default batch size is {args.test_batch_size}" )
+            print(f"遇到了一个未满载的batch, 该batch的实际大小为 {BATCHSIZE}, 默认batch大小为 {args.test_batch_size}" )
             print("=" * 20)            
         for evaluator in evaluator_list:
             if if_remain == True:
@@ -80,12 +82,9 @@ def test_one_loader(model: torch.nn.Module,
                 continue
             else:               # pixel-level results, update to logger
                 assert BATCHSIZE == len(results) , f"Length of output results in evaluator {evaluator.name} does not match with the bachsize."
-                # print(BATCHSIZE, results.shape)
-                # print(results)
+
                 # Only apply to SUM able metrics
                 results = torch.sum(results)
-                # print(results)
-                # print(data_dict['name'])
 
                 assert evaluator.name != "_n", f"name in evaluator {evaluator.name} can't set to '_n' to avoid conflicts in metric logger."
                 
@@ -105,8 +104,6 @@ def test_one_loader(model: torch.nn.Module,
                         _n= BATCHSIZE / world_size
                     )
 
-        # print(evaluator.name, metric_logger.meters[evaluator.name].count)
-        # print(evaluator.name, metric_logger.meters[evaluator.name].total)
     return data_dict, output_dict
 
 
@@ -120,8 +117,6 @@ def test_one_epoch(model: torch.nn.Module,
                     print_freq = 20,
                     args=None,
                     is_test=True):
-      
-    # print(data_loader.dataset.tp_path)
     
     with torch.no_grad():
         model.zero_grad()
@@ -129,11 +124,12 @@ def test_one_epoch(model: torch.nn.Module,
             print("model.eval() IS NOT APPLIED")
         else:
             model.eval()
-        metric_logger = misc.MetricLogger(delimiter="  ")
+
+        metric_logger = misc.MetricLogger(delimiter="  ") # 创建metric logger
         # F1 evaluation for an Epoch during training
         header = 'Test: [{}]'.format(epoch)
         
-        # Full test on the vanilla dataloader with drop_last==True
+        # 在每个数据加载器上进行测试
         data_dict, output_dict = test_one_loader(
             model=model,
             data_loader=data_loader,

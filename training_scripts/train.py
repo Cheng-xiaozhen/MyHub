@@ -67,6 +67,7 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
 
     # 初始化数据集
     # 多个数据集混合在一起组成训练集
+    # 在这里加入公共的transform和post function
     train_dataset_args["init_config"].update({
         "post_funcs": post_function,
         "common_transform": train_transform,
@@ -217,7 +218,7 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
         
         # train for one epoch
         train_stats = train_one_epoch(
-            model, 
+            model, # 
             data_loader_train,
             optimizer, 
             device, 
@@ -239,10 +240,10 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
                 epoch=epoch
                 )
         
-        # test for one epoch
+        # 根据test_period参数决定是否进行测试
         if epoch % args.test_period == 0 or epoch + 1 == args.epochs:
-            values = {}  # dict of dict (dataset_name: {metric_name: metric_value})
-            # test across all datasets in the `test_data_loaders' dict
+            values = {}  #  (dataset_name: {metric_name: metric_value})
+            # 对测试数据集list中的所有数据集进行测试
             for test_dataset_name, test_dataloader in test_dataloaders.items():
                 print(f'!!!Start Test: {test_dataset_name}', len(test_dataloader))
                 test_stats = test_one_epoch(
@@ -295,9 +296,9 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
 
         if args.output_dir and misc.is_main_process():
             if log_writer is not None:
-                log_writer.flush()
+                log_writer.flush() # 刷新TensorBoard日志写入器, 确保所有日志都被写入磁盘
             with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
-                f.write(json.dumps(log_stats) + "\n")
+                f.write(json.dumps(log_stats) + "\n") # 将日志信息以JSON格式写入log.txt文件
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
@@ -315,7 +316,7 @@ if __name__ == '__main__':
     args, model_args, train_dataset_args, test_dataset_args, transform_args, evaluator_args = split_config(config)
 
     add_attr(args, output_dir=args.log_dir)
-    add_attr(args, if_not_amp=not args.use_amp)
+    add_attr(args, if_amp=args.use_amp)
 
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
