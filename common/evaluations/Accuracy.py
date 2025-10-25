@@ -53,6 +53,9 @@ class ImageAccuracy(BaseEvaluator):
         self.local_rank = misc.get_rank()
 
     def batch_update(self, predict_label, label, *args, **kwargs):
+        """
+        数据收集
+        """
         self._chekc_image_level_params(predict_label, label)
         self.predict.append(predict_label)
         self.label.append(label)

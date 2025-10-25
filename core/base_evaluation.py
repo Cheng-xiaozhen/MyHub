@@ -24,23 +24,26 @@ class BaseEvaluator(object): # 想了想没必要用nn.module 反而可能会引
             raise ValueError(f"Detect none image-level binary label from the dataset, cannot calculate {self.name}. Please remove Image-level metrics from the script, or check the dataset output.")
     def batch_update(self, predict, pred_label, mask, shape_mask=None, *args, **kwargs):
         """
-        本函数在每个batch结尾update。
+        在每个batch结束时update。
+
         """
         raise NotImplementedError
     def remain_update(self, predict, pred_label, mask, shape_mask=None, *args, **kwargs):
         """
-        本函数在每个batch结尾update。
+        在每个batch结束时update。
         主要用于处理在最后一个batch之后的剩余数据。
         """
         raise NotImplementedError
     def epoch_update(self):
         """
-        理论上这个时候没有新的数据了，所以没有输入参数。
-        
-        功能：在显卡之间收集所有在整个epoch内统计的指标，然后返回最终期望的信息。
+        在遍历完整个数据集(包括所有批次和剩余数据)后, 调用该方法以进行最终的指标计算和更新。
+        利用batch_update和remain_update中累积的数据，计算最终的评估指标。
         """
         raise NotImplementedError
     def recovery(self):
+        """
+        在完成一次完整的评估后,调用此方法将评估器内部的统计量清零
+        """
         raise NotImplementedError
 
 

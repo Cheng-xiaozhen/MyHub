@@ -248,7 +248,7 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
                 print(f'!!!Start Test: {test_dataset_name}', len(test_dataloader))
                 test_stats = test_one_epoch(
                     model,
-                    data_loader=test_dataloader,
+                    data_loader=test_dataloader, # 测试数据集的DataLoader
                     evaluator_list=evaluator_list,
                     device=device,
                     epoch=epoch,
