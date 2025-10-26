@@ -54,7 +54,7 @@ class ImageAccuracy(BaseEvaluator):
 
     def batch_update(self, predict_label, label, *args, **kwargs):
         """
-        数据收集
+        数据收集 每个gpu保存自己的数据，等epoch结束后再汇总计算
         """
         self._chekc_image_level_params(predict_label, label)
         self.predict.append(predict_label)
@@ -62,40 +62,50 @@ class ImageAccuracy(BaseEvaluator):
         return None
         
     def remain_update(self, predict_label, label, *args, **kwargs):
+        """
+        收集尾部数据 每个gpu保存自己的数据，等epoch结束后再汇总计算
+        """
         self._chekc_image_level_params(predict_label, label)
         self.remain_predict.append(predict_label)
         self.remain_label.append(label)
         return None
 
     def epoch_update(self):
+        """
+        分布式计算环境中,无法直接在每个进程中计算Accuracy, 因为每个进程只包含了部分数据
+        先收集汇总数据, 然后在主进程中计算Accuracy
+        """
         if len(self.predict) != 0:
-            predict = torch.cat(self.predict, dim=0)
-            label = torch.cat(self.label, dim=0)
-            gather_predict_list = [torch.zeros_like(predict) for _ in range(self.world_size)]
+            # 1. 本地聚合 每个gpu将自己的数据拼接起来
+            predict = torch.cat(self.predict, dim=0) # 将list中的tensor拼接成一个大的tensor
+            label = torch.cat(self.label, dim=0) # 将list中的tensor拼接成一个大的tensor
+
+            # 2. 跨gpu聚合 使用all_gather将每个gpu的数据收集到一起
+            gather_predict_list = [torch.zeros_like(predict) for _ in range(self.world_size)] # 创建一个list,长度等于gpt数, 元素为和predict形状相同的全0 tensor
             gather_label_list = [torch.zeros_like(label) for _ in range(self.world_size)]
-            dist.all_gather(gather_predict_list, predict)
+
+            dist.all_gather(gather_predict_list, predict)  # 广播,所有gpu广播并收集predict张量, 按rank存放在gather_predict_list中
             dist.all_gather(gather_label_list, label)
-            gather_predict = torch.cat(gather_predict_list, dim=0)
+
+            gather_predict = torch.cat(gather_predict_list, dim=0) # 将收集到的数据片段合并
             gather_label = torch.cat(gather_label_list, dim=0) 
+            # 3. 合并尾部数据
             if len(self.remain_predict) != 0:
                 self.remain_predict = torch.cat(self.remain_predict, dim=0)
                 self.remain_label = torch.cat(self.remain_label, dim=0)
                 gather_predict = torch.cat([gather_predict, self.remain_predict], dim=0)
                 gather_label = torch.cat([gather_label, self.remain_label], dim=0)
         else:
+            # 处理drop_last 被丢弃的尾部数据
             if len(self.remain_predict) == 0:
-                raise RuntimeError(f"No data to calculate {self.name}, please check the input data.")
-            gather_predict = torch.cat(self.remain_predict, dim=0)
+                raise RuntimeError(f"没有数据可用于计算 {self.name}, 请检查.")
+            gather_predict = torch.cat(self.remain_predict, dim=0) 
             gather_label = torch.cat(self.remain_label, dim=0)
-        # Calculate the accuracy
+        # 4. 最终计算
         binary_predict = (gather_predict > self.threshold).float()
-        # print("binary_predict", binary_predict.shape)
         correct = (torch.sum(binary_predict == gather_label)).sum().item()
-        # print("correct", correct)
         total = gather_predict.shape[0]
-        # print("total", total)
         acc = correct / total
-        # print("acc", acc)
         return acc
     def recovery(self):
         self.predict = []
@@ -242,7 +252,6 @@ def test_origin_image_ACC():
     
     # 清理分布式环境
     dist.destroy_process_group()
-
 
 
 def test_pixal_ACC():

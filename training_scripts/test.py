@@ -8,11 +8,12 @@ from pathlib import Path
 import timm.optim.optim_factory as optim_factory
 from torch.utils.tensorboard import SummaryWriter
 
-import ForensicHub.training_scripts.utils.misc as misc
-from ForensicHub.registry import DATASETS, MODELS, POSTFUNCS, TRANSFORMS, EVALUATORS, build_from_registry
-from ForensicHub.common.evaluation import PixelF1, ImageF1
-from IMDLBenCo.training_scripts.tester import test_one_epoch
-from ForensicHub.common.utils.yaml import load_yaml_config, split_config, add_attr
+from ..core.registry import DATASETS, MODELS, POSTFUNCS, TRANSFORMS, EVALUATORS, build_from_registry
+
+from .utils import misc
+from .utils.yaml import load_yaml_config,split_config, add_attr
+from .trainer import train_one_epoch
+from .tester import test_one_epoch
 
 
 def get_args_parser():

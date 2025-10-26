@@ -111,7 +111,7 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
                 num_replicas=num_tasks,
                 rank=global_rank,
                 shuffle=False,
-                drop_last=True
+                #drop_last=True # 后面在test_dataloader中设置了drop_last=True 这里应该不需要了
             )
             test_sampler[test_dataset_name] = sampler_test
         print("Sampler_train = %s" % str(sampler_train))
@@ -135,14 +135,15 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         pin_memory=args.pin_mem,
-        drop_last=True,
+        drop_last=True, # pytorch DDP要求每个gpu上的batch大小相同, 因此丢弃最后一个不完整的batch
     )
 
     # 初始化测试集数据加载器
     test_dataloaders = {}
     for test_dataset_name in test_sampler.keys():
         test_dataloader = torch.utils.data.DataLoader(
-            test_dataset_list[test_dataset_name], sampler=test_sampler[test_dataset_name],
+            test_dataset_list[test_dataset_name],
+            sampler=test_sampler[test_dataset_name],
             batch_size=args.test_batch_size,
             num_workers=args.num_workers,
             pin_memory=args.pin_mem,
@@ -258,32 +259,45 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
                     is_test=False,
                 )
                 one_metric_value = {}
-                # Read the metric value from the test_stats dict
+                # 从test_stats字典中读取指标值,test_stats格式: {'ImageAcc': 0.95, 'ImageF1': 0.9, ...}
                 for evaluator in evaluator_list:
                     evaluate_metric_value = test_stats[evaluator.name]
                     one_metric_value[evaluator.name] = evaluate_metric_value
-                values[test_dataset_name] = one_metric_value
+                values[test_dataset_name] = one_metric_value # 将指标以数据集的形式组织
+                """
+                values = {
+                        'CASIA':   {'Image-Acc': 0.95, 'Pixel-F1': 0.89},
+                        'NIST16':  {'Image-Acc': 0.92, 'Pixel-F1': 0.85},
+                        'Coverage':{'Image-Acc': 0.98, 'Pixel-F1': 0.94}
+                    }
+                """
 
             metrics_dict = {metric: {dataset: values[dataset][metric] for dataset in values} for metric in
-                            {m for d in values.values() for m in d}}
-            # Calculate the mean of each metric across all datasets
+                            {m for d in values.values() for m in d}} # 将values转换为按指标组织的形式
+            """
+            metrics_dict = {
+                        'Image-Acc': {'CASIA': 0.95, 'NIST16': 0.92, 'Coverage': 0.98},
+                        'Pixel-F1':  {'CASIA': 0.89, 'NIST16': 0.85, 'Coverage': 0.94}
+                }
+            """
+            # 计算每个指标在所有数据集上的平均值
             metric_means = {metric: np.mean(list(datasets.values())) for metric, datasets in metrics_dict.items()}
-            # Calculate the mean of all metrics
+            # 计算所有指标的平均值
             evaluate_metric_value = np.mean(list(metric_means.values()))
 
-            # Store the best metric value
+            # 记录最佳指标值并保存模型
             if evaluate_metric_value > best_evaluate_metric_value:
                 best_evaluate_metric_value = evaluate_metric_value
                 print(
                     f"Best {' '.join([evaluator.name for evaluator in evaluator_list])} = {best_evaluate_metric_value}")
-                # Save the best only after record epoch.
+                # 仅在记录周期后保存模型,  避免训练初期频繁保存模型
                 if epoch >= args.record_epoch:
                     misc.save_model(
                         args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
                         loss_scaler=loss_scaler, epoch=epoch)
             else:
                 print(f"Average {' '.join([evaluator.name for evaluator in evaluator_list])} = {evaluate_metric_value}")
-            # Log the metrics to Tensorboard
+            # 记录指标值到TensorBoard
             if log_writer is not None:
                 for metric, datasets in metrics_dict.items():
                     log_writer.add_scalars(f'{metric}_Metric', datasets, epoch)

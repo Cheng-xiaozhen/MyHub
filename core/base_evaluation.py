@@ -24,14 +24,13 @@ class BaseEvaluator(object): # 想了想没必要用nn.module 反而可能会引
             raise ValueError(f"Detect none image-level binary label from the dataset, cannot calculate {self.name}. Please remove Image-level metrics from the script, or check the dataset output.")
     def batch_update(self, predict, pred_label, mask, shape_mask=None, *args, **kwargs):
         """
-        在每个batch结束时update。
+        每个gpu收集每个batch的数据
 
         """
         raise NotImplementedError
     def remain_update(self, predict, pred_label, mask, shape_mask=None, *args, **kwargs):
         """
-        在每个batch结束时update。
-        主要用于处理在最后一个batch之后的剩余数据。
+        收集在使用drop_last=True时,被丢弃的尾部数据
         """
         raise NotImplementedError
     def epoch_update(self):

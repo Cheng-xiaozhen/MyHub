@@ -82,11 +82,11 @@ evaluator:
       threshold: 0.5
 
 # Training related
-batch_size: 2
+batch_size: 256
 test_batch_size: 128
 epochs: 20
 accum_iter: 1
-record_epoch: 20  # Save the best only after record epoch.
+record_epoch: 0  # Save the best only after record epoch.
 
 # Test related
 no_model_eval: false
