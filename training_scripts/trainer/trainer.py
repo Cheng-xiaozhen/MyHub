@@ -128,7 +128,8 @@ def train_one_epoch(model: torch.nn.Module,
         if log_writer is not None and (data_iter_step + 1) % max(int(log_period), 1) == 0:
             """ 
             在tensorboard 中使用 epoch_1000x 作为 x 轴。
-            当批量大小发生变化时，这将校准不同的曲线。
+            细粒度化x轴, 便于观察每个epoch中的训练变化趋势
+            例如 epoch_1000x = 500 表示 epoch 0.5,第0个epoch进行了50%的进度
             """
             epoch_1000x = int((data_iter_step / len(data_loader) + epoch) * 1000)
             log_writer.add_scalar('lr', lr, epoch_1000x)

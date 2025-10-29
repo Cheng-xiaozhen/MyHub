@@ -263,7 +263,7 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
                 for evaluator in evaluator_list:
                     evaluate_metric_value = test_stats[evaluator.name]
                     one_metric_value[evaluator.name] = evaluate_metric_value
-                values[test_dataset_name] = one_metric_value # 将指标以数据集的形式组织
+                values[test_dataset_name] = one_metric_value # 记录所有数据集的指标值,将指标以数据集的形式组织
                 """
                 values = {
                         'CASIA':   {'Image-Acc': 0.95, 'Pixel-F1': 0.89},
@@ -302,9 +302,20 @@ def main(args, model_args, train_dataset_args, test_dataset_args, transform_args
                 for metric, datasets in metrics_dict.items():
                     log_writer.add_scalars(f'{metric}_Metric', datasets, epoch)
                 log_writer.add_scalar('Average', evaluate_metric_value, epoch)
+            # 扁平化 metrics_dict 以便记录
+            flat_test_stats = {}
+            for metric_name, dataset_metrics in metrics_dict.items():
+                for dataset_name, value in dataset_metrics.items():
+                    flat_test_stats[f"{metric_name}_{dataset_name}"] = value
+            
+            # 将所有指标的平均值也加入日志
+            for metric_name, mean_value in metric_means.items():
+                flat_test_stats[f"Average_{metric_name}"] = mean_value
+
             log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
-                         **{f'test_{k}': v for k, v in test_stats.items()},
-                         'epoch': epoch, }
+                         **flat_test_stats,
+                         'epoch': epoch,
+                         }
         else:
             log_stats = {**{f'train_{k}': v for k, v in train_stats.items()}, 'epoch': epoch, }
 

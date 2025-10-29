@@ -1,9 +1,9 @@
 # DDP
-gpus: "0,1"
+gpus: "0,1,3"
 flag: train
 
 # Log
-log_dir: "./log/resnet_train"
+log_dir: "/home/chengxiaozhen/Test/ForensicHub/MyHub/log/resnet_train2"
 
 # Task
 if_predict_label: true
@@ -11,7 +11,7 @@ if_predict_mask: false
 
 # Model
 model:
-  name: Resnet101
+  name: Resnet50
   # Model specific setting
   init_config:
     output_type: label
@@ -27,47 +27,48 @@ train_dataset:
         pic_nums: 12641
         init_config:
           image_size: 256
+          path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/FaceForensics++.json
+      - name: LabelDataset
+        pic_nums: 12641
+        init_config:
+          image_size: 256
+          path:
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_ADM.json
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_BigGAN.json
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_glide.json
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_Midjourney.json
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_stable_diffusion_v_1_4.json
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_stable_diffusion_v_1_5.json
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_VQDM.json
+            - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_wukong.json
+      - name: LabelDataset
+        pic_nums: 12641
+        init_config:
+          image_size: 256
           path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/CASIAv2.json
-      # - name: LabelDataset
-      #   pic_nums: 12641
-      #   init_config:
-      #     image_size: 256
-      #     path:
-      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_ADM.json
-      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_BigGAN.json
-      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_glide.json
-      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_Midjourney.json
-      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_stable_diffusion_v_1_4.json
-      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_stable_diffusion_v_1_5.json
-      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_VQDM.json
-      #       - /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/GenImage_wukong.json
-      # - name: LabelDataset
-      #   pic_nums: 12641
-      #   init_config:
-      #     image_size: 256
-      #     path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/train_data/FaceForensics++.json
           #config_file: /mnt/data1/public_datasets/Deepfake/FaceForensics++.json
 
 #  Test dataset (one or many)
 test_dataset:
   - name: LabelDataset
-    dataset_name: Coverage
+    dataset_name: FF++_test
     init_config:
       image_size: 256
-      path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/test_data/coverage.json
+      path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/test_data/FaceForensics++.json
       # Dataset specific setting
       is_resizing: true
       is_padding: false
-  # - name: LabelDataset
-  #   dataset_name: GenImage_ADM_test
-  #   init_config:
-  #     image_size: 256
-  #     path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/test_data/GenImage_ADM.json
-  # - name: LabelDataset
-  #   dataset_name: FF++_test
-  #   init_config:
-  #     image_size: 256
-  #     path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/test_data/FaceForensics++.json
+  - name: LabelDataset
+    dataset_name: GenImage_ADM_test
+    init_config:
+      image_size: 256
+      path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/test_data/GenImage_ADM.json
+  
+  - name: LabelDataset
+    dataset_name: Columbia_test
+    init_config:
+      image_size: 256
+      path: /home/chengxiaozhen/Test/ForensicHub/MyHub/data/test_data/columbia.json
       #config_file: /mnt/data1/public_datasets/Deepfake/FF-DF.json
       #split_mode: test
 
@@ -84,7 +85,7 @@ evaluator:
 # Training related
 batch_size: 256
 test_batch_size: 128
-epochs: 20
+epochs: 2
 accum_iter: 1
 record_epoch: 0  # Save the best only after record epoch.
 

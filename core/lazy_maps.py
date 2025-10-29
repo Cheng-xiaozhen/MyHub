@@ -58,7 +58,10 @@ def get_all_lazy_map():
         "PixelAUC":"MyHub.common.evaluations.AUC",
         "ImageAUCNoRemain":"MyHub.common.evaluations.AUC",
         "Resnet":"MyHub.common.backbones.resnet",
+        "Resnet50":"MyHub.common.backbones.resnet",
         "Resnet101":"MyHub.common.backbones.resnet",
-        
+        "ConvNextSmall":"MyHub.common.backbones.convnext",
+        "DCTConvNextSmall":"MyHub.common.backbones.convnext",
+        "QtConvNextSmall":"MyHub.common.backbones.convnext",
     }
     return lazy_map
