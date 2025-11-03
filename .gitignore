@@ -1,6 +1,27 @@
-# 忽略log目录
-log/
+# === Project folders ===
+# 忽略所有 log 文件夹
+**/log/
+
+# 忽略根目录下的 config 文件夹
 config/
+
+# 忽略特定模型文件
 models/mesorch/mit_b3.pth
+
+# === Python cache ===
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+
+# === Others you may want ===
+# 虚拟环境
+.venv/
+venv/
+
+# IDE 配置
+.idea/
+.vscode/
+
+# 数据、模型输出
+runs/
+outputs/
