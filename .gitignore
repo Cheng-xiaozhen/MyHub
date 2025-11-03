@@ -2,3 +2,5 @@
 log/
 config/
 models/mesorch/mit_b3.pth
+__pycache__/
+*.pyc

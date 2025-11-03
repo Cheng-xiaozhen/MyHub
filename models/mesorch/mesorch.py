@@ -690,10 +690,15 @@ class Mesorch(nn.Module):
         self.loss_fn = nn.BCEWithLogitsLoss()
         self.if_predict_label = if_predict_label
         if if_predict_label:
-            self.pooled = nn.AdaptiveAvgPool2d(1)
-            self.label_head = nn.Sequential(
-                nn.Linear(2464, 256), nn.ReLU(), nn.Linear(256, 1)
+            self.head = nn.Sequential(
+                nn.AdaptiveAvgPool2d(1),
+                nn.Flatten(),
+                nn.Linear(1,1)
             )
+            # self.pooled = nn.AdaptiveAvgPool2d(1)
+            # self.label_head = nn.Sequential(
+            #     nn.Linear(2464, 256), nn.ReLU(), nn.Linear(256, 1)
+            # )
 
     def forward_features(self, image, *args, **kwargs):
         high_freq = self.high_dct(image)
