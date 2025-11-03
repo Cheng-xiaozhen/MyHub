@@ -7,6 +7,7 @@ config/
 
 # 忽略特定模型文件
 models/mesorch/mit_b3.pth
+models/dire/imagenet_adm.pth
 
 # === Python cache ===
 __pycache__/
