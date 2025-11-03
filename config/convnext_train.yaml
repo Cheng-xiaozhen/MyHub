@@ -1,9 +1,9 @@
 # DDP
-gpus: "0,1,3"
+gpus: "0,1"
 flag: train
 
 # Log
-log_dir: "/home/chengxiaozhen/Test/ForensicHub/MyHub/log/crossdataset_convnextsmall_none_train"
+log_dir: "/home/qycx/gaojunruo/chengxiaozhen/MyHub/log/crossdataset_convnextsmall_none_train"
 
 # Task
 if_predict_label: true
@@ -27,25 +27,25 @@ train_dataset:
         pic_nums: 12641
         init_config:
           image_size: 256
-          path: /home/censoring/data/train_data/FaceForensics++.json
+          path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/train_data/FaceForensics++.json
       - name: LabelDataset
         pic_nums: 12641
         init_config:
           image_size: 256
           path:
-            - /home/censoring/data/train_data/GenImage_ADM.json
-            - /home/censoring/data/train_data/GenImage_BigGAN.json
-            - /home/censoring/data/train_data/GenImage_glide.json
-            - /home/censoring/data/train_data/GenImage_Midjourney.json
-            - /home/censoring/data/train_data/GenImage_stable_diffusion_v_1_4.json
-            - /home/censoring/data/train_data/GenImage_stable_diffusion_v_1_5.json
-            - /home/censoring/data/train_data/GenImage_VQDM.json
-            - /home/censoring/data/train_data/GenImage_wukong.json
+            - /home/qycx/gaojunruo/chengxiaozhen/data/data_json/train_data/GenImage_ADM.json
+            - /home/qycx/gaojunruo/chengxiaozhen/data/data_json/train_data/GenImage_BigGAN.json
+            - /home/qycx/gaojunruo/chengxiaozhen/data/data_json/train_data/GenImage_glide.json
+            - /home/qycx/gaojunruo/chengxiaozhen/data/data_json/train_data/GenImage_Midjourney.json
+            - /home/qycx/gaojunruo/chengxiaozhen/data/data_json/train_data/GenImage_stable_diffusion_v_1_4.json
+            - /home/qycx/gaojunruo/chengxiaozhen/data/data_json/train_data/GenImage_stable_diffusion_v_1_5.json
+            - /home/qycx/gaojunruo/chengxiaozhen/data/data_json/train_data/GenImage_VQDM.json
+            - /home/qycx/gaojunruo/chengxiaozhen/data/data_json/train_data/GenImage_wukong.json
       - name: LabelDataset
         pic_nums: 12641
         init_config:
           image_size: 256
-          path: /home/censoring/data/train_data/CASIAv2.json
+          path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/train_data/CASIAv2.json
           #config_file: /mnt/data1/public_datasets/Deepfake/FaceForensics++.json
 
 #  Test dataset (one or many)
@@ -54,15 +54,25 @@ test_dataset:
     dataset_name: FF++_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/FaceForensics++.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/FaceForensics++.json
       # Dataset specific setting
       is_resizing: true
       is_padding: false
   - name: LabelDataset
+    dataset_name: FaceShifter_test
+    init_config:
+      image_size: 256
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/FaceShifter_test.json 
+  - name: LabelDataset
+    dataset_name: DeepFakeDetection_test
+    init_config:
+      image_size: 256
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/DeepFakeDetection_test.json
+  - name: LabelDataset
     dataset_name: UADFV_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/UADFV_test.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/UADFV_test.json
       # Dataset specific setting
       is_resizing: true
       is_padding: false
@@ -70,74 +80,87 @@ test_dataset:
     dataset_name: Celeb_DF_v1_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/Celeb-DF-v1_test.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/Celeb-DF-v1_test.json
   - name: LabelDataset
     dataset_name: DFDC_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/DFDC_test.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/DFDC_test.json
   - name: LabelDataset
     dataset_name: DFDCP_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/DFDCP_test.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/DFDCP_test.json
   - name: LabelDataset
     dataset_name: Celeb_DF_v2_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/Celeb-DF-v2_test.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/Celeb-DF-v2_test.json
   - name: LabelDataset
     dataset_name: GenImage_ADM_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/GenImage_ADM.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/GenImage_ADM.json
   - name: LabelDataset
     dataset_name: GenImage_BigGAN_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/GenImage_BigGAN.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/GenImage_BigGAN.json
   - name: LabelDataset
     dataset_name: GenImage_glide_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/GenImage_glide.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/GenImage_glide.json
   - name: LabelDataset
     dataset_name: GenImage_Midjourney_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/GenImage_Midjourney.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/GenImage_Midjourney.json
   - name: LabelDataset
     dataset_name: GenImage_stable_diffusion_v_1_4_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/GenImage_stable_diffusion_v_1_4.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/GenImage_stable_diffusion_v_1_4.json
   - name: LabelDataset
     dataset_name: GenImage_stable_diffusion_v_1_5_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/GenImage_stable_diffusion_v_1_5.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/GenImage_stable_diffusion_v_1_5.json
   - name: LabelDataset
     dataset_name: GenImage_VQDM_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/GenImage_VQDM.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/GenImage_VQDM.json
   - name: LabelDataset
     dataset_name: GenImage_wukong_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/GenImage_wukong.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/GenImage_wukong.json
   - name: LabelDataset
-    dataset_name: GenImage_SD_inpaint_test
+    dataset_name: SD_inpaint_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/SD_inpaint_test.json
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/SD_inpaint_test.json
+  - name: LabelDataset
+    dataset_name: Chameleon_test
+    init_config:
+      image_size: 256
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/Chameleon_test.json
   - name: LabelDataset
     dataset_name: Columbia_test
     init_config:
       image_size: 256
-      path: /home/censoring/data/test_data/columbia.json
-      #config_file: /mnt/data1/public_datasets/Deepfake/FF-DF.json
-      #split_mode: test
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/columbia.json
+  - name: LabelDataset
+    dataset_name: coverage_test
+    init_config:
+      image_size: 256
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/coverage.json
+  - name: LabelDataset
+    dataset_name: IMD2020_test
+    init_config:
+      image_size: 256
+      path: /home/qycx/gaojunruo/chengxiaozhen/data/data_json/test_data/IMD2020_test.json
 
 # Transform
 transform:

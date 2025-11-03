@@ -43,25 +43,30 @@
 
 #     return cls, flag
 
+
 def get_all_lazy_map():
     lazy_map = {
-        "CrossDataset":"MyHub.common.datasets.CrossDataset",
-        "LabelDataset":"MyHub.common.datasets.LabelDataset",
-        "CrossTransform":"MyHub.common.transforms.CrossTransform",
-        "ImageF1":"MyHub.common.evaluations.F1",
-        "PixelF1":"MyHub.common.evaluations.F1",
-        "ImageF1NoRemain":"MyHub.common.evaluations.F1",
-        "ImageAccuracy":"MyHub.common.evaluations.Accuracy",
-        "PixelAccuracy":"MyHub.common.evaluations.Accuracy",
-        "ImageAccuracyNoRemain":"MyHub.common.evaluations.Accuracy",
-        "ImageAUC":"MyHub.common.evaluations.AUC",
-        "PixelAUC":"MyHub.common.evaluations.AUC",
-        "ImageAUCNoRemain":"MyHub.common.evaluations.AUC",
-        "Resnet":"MyHub.common.backbones.resnet",
-        "Resnet50":"MyHub.common.backbones.resnet",
-        "Resnet101":"MyHub.common.backbones.resnet",
-        "ConvNextSmall":"MyHub.common.backbones.convnext",
-        "DCTConvNextSmall":"MyHub.common.backbones.convnext",
-        "QtConvNextSmall":"MyHub.common.backbones.convnext",
+        "CrossDataset": "MyHub.common.datasets.CrossDataset",
+        "LabelDataset": "MyHub.common.datasets.LabelDataset",
+        "CrossTransform": "MyHub.common.transforms.CrossTransform",
+        "ImageF1": "MyHub.common.evaluations.F1",
+        "PixelF1": "MyHub.common.evaluations.F1",
+        "ImageF1NoRemain": "MyHub.common.evaluations.F1",
+        "ImageAccuracy": "MyHub.common.evaluations.Accuracy",
+        "PixelAccuracy": "MyHub.common.evaluations.Accuracy",
+        "ImageAccuracyNoRemain": "MyHub.common.evaluations.Accuracy",
+        "ImageAUC": "MyHub.common.evaluations.AUC",
+        "PixelAUC": "MyHub.common.evaluations.AUC",
+        "ImageAUCNoRemain": "MyHub.common.evaluations.AUC",
+        "Resnet": "MyHub.common.backbones.resnet",
+        "Resnet50": "MyHub.common.backbones.resnet",
+        "Resnet101": "MyHub.common.backbones.resnet",
+        "ConvNextSmall": "MyHub.common.backbones.convnext",
+        "EfficientB4": "MyHub.common.backbones.efficientnet",
+        "Xception": "MyHub.common.backbones.xception",
+        "UnivFD": "MyHub.models.univfd.UnivFD",
+        "Segformerb3": "MyHub.common.backbones.segformer",
+        "Spsl": "MyHub.models.spsl.spsl",
+        "Mesorch": "MyHub.models.mesorch.mesorch",
     }
     return lazy_map

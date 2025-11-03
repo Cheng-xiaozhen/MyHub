@@ -1,2 +1,4 @@
 # 忽略log目录
 log/
+config/
+models/mesorch/mit_b3.pth
