@@ -68,5 +68,6 @@ def get_all_lazy_map():
         "Segformerb3": "MyHub.common.backbones.segformer",
         "Spsl": "MyHub.models.spsl.spsl",
         "Mesorch": "MyHub.models.mesorch.mesorch",
+        "Dire": "MyHub.models.dire.dire",
     }
     return lazy_map
