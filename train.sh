@@ -4,4 +4,4 @@ torchrun \
   --nnodes=1 \
   --nproc_per_node=2 \
   -m MyHub.training_scripts.train \
-  --config MyHub/config/mesorch_train.yaml \
+  --config MyHub/config/convnext_train_fake_love.yaml \
